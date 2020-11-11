@@ -3,8 +3,8 @@ Class extends cGoogleComms
 
 Class constructor  // oGoogleAuth:object ; spreadsheet_url:text
 	
-	C_OBJECT:C1216($1)
-	C_TEXT:C284($2)
+	var $1 : Object
+	var $2 : Text
 	
 	Super:C1705("native")  //comms type
 	This:C1470._auth:=$1
@@ -121,7 +121,7 @@ Function getSheetNames  //  -> sheetNameList: collection
 	// optionally reloads the sheet, first
 	
 	
-	C_COLLECTION:C1488($sheetNames)
+	var $sheetNames : Collection
 	$sheetNames:=New collection:C1472
 	
 	This:C1470._loadIfNotLoaded()
@@ -168,14 +168,16 @@ Function getValues  //(range:TEXT {; majorDimension:Text ; valueRenderOption:Tex
 		"dateTimeRenderOption="+$dateTimeRenderOption
 	
 	$url:=This:C1470.endpoint+This:C1470.spreadsheetId+"/values/"+$queryString
-	$oResult:=Super:C1706._http(HTTP GET method:K71:1;$url;"";This:C1470._auth.getHeader())
+	$oResult:=This:C1470._http(HTTP GET method:K71:1;$url;"";This:C1470._auth.getHeader())
+	//<debugx> need to come up with a more general way to do this b/c otherwise every call to _http will need to repeat this code.
 	If (OB Is defined:C1231($oResult.value;"error"))  // error occurred
 		If (($oResult.value.error.code=401) & ($oResult.value.error.status="UNAUTHENTICATED"))  //token expired, try again with a forced refresh on the token
-			$oResult:=Super:C1706._http(HTTP GET method:K71:1;$url;"";This:C1470._auth.getHeader(True:C214))
+			$oResult:=This:C1470._http(HTTP GET method:K71:1;$url;"";This:C1470._auth.getHeader(True:C214))
 		End if   //($oResult.value.error.code=401) & ($oResult.value.error.status="UNAUTHENTICATED")
 	End if   //(ob is defined($oResult.value.error))
 	This:C1470.status:=$oResult.status
 	This:C1470.sheetData:=$oResult.value
+	//</debugx>
 	
 	If (This:C1470.status#200)
 		$0:=Null:C1517
@@ -190,8 +192,9 @@ Function load  // {(rangeString:text , includeGridData:boolean)}
 	// optional params:
 	
 	//<handle params>
-	C_TEXT:C284($1)
-	C_BOOLEAN:C305($2)
+	var $1 : Text
+	var $2 : Boolean
+	var $oResult : Object
 	
 	$rangeString:=""
 	$includeGridData:="false"
@@ -208,8 +211,7 @@ Function load  // {(rangeString:text , includeGridData:boolean)}
 	
 	
 	$url:=This:C1470.endpoint+This:C1470.spreadsheetId+$queryString
-	C_OBJECT:C1216($oResult)
-	$oResult:=Super:C1706._http(HTTP GET method:K71:1;$url;"";This:C1470._auth.getHeader())
+	$oResult:=This:C1470._http(HTTP GET method:K71:1;$url;"";This:C1470._auth.getHeader())
 	This:C1470.status:=$oResult.status
 	This:C1470.sheetData:=$oResult.value
 	
@@ -242,12 +244,10 @@ Function setValues  //(range:TEXT ; valuesObject: Object ; valueInputOption:Text
 	
 	
 	//<handle params>
-	C_TEXT:C284($1)
-	C_OBJECT:C1216($2)
-	C_TEXT:C284($3)
-	C_BOOLEAN:C305($4)
-	C_TEXT:C284($5)
-	C_TEXT:C284($6)
+	var $1;$3;$5;$6 : Text
+	var $2 : Object
+	var $4 : Boolean
+	var $oResult : Object
 	
 	//<mandatory parameters>
 	$rangeString:=This:C1470._queryRange($1)
@@ -283,8 +283,7 @@ Function setValues  //(range:TEXT ; valuesObject: Object ; valueInputOption:Text
 	//</handle params>
 	
 	$url:=This:C1470.endpoint+This:C1470.spreadsheetId+"/values/"+$rangeString+$queryString
-	C_OBJECT:C1216($oResult)
-	$oResult:=Super:C1706._http(HTTP PUT method:K71:6;$url;JSON Stringify:C1217($2);This:C1470._auth.getHeader())
+	$oResult:=This:C1470._http(HTTP PUT method:K71:6;$url;JSON Stringify:C1217($2);This:C1470._auth.getHeader())
 	This:C1470.status:=$oResult.status
 	This:C1470.sheetData:=$oResult.value
 	
@@ -299,6 +298,21 @@ Function setValues  //(range:TEXT ; valuesObject: Object ; valueInputOption:Text
 	//                                        P R I V A T E   F U N C T I O N S
 	
 	// ===============================================================================================================
+	
+	
+Function _http  // (http_method:TEXT ; url:TEXT; body:TEXT; header:object)
+	// returns an object with properties  status:TEXT ; value:TEXT
+	//tries the cGoogleComms._http.  If it fails, it checks to see if that is because the token expired, and if so, tries again.
+	var $1;$2;$3 : Text
+	var $4;$oResult;$0 : Object
+	$oResult:=Super:C1706._http($1;$2;$3;$4)
+	If (OB Is defined:C1231($oResult.value;"error"))  // error occurred
+		If (($oResult.value.error.code=401) & ($oResult.value.error.status="UNAUTHENTICATED"))  //token expired, try again with a forced refresh on the token
+			$oResult:=Super:C1706._http($1;$2;$3;This:C1470._auth.getHeader(True:C214))  // $4 should be this._auth.getHeader()
+		End if   //($oResult.value.error.code=401) & ($oResult.value.error.status="UNAUTHENTICATED")
+	End if   //(ob is defined($oResult.value.error))
+	$0:=$oResult
+	// _______________________________________________________________________________________________________________
 	
 	
 Function _ss_batchUpdate  // (request:object ; includeSpreadsheetInResponse:boolean ; responseRanges:string ; responseIncludeGridData:boolean) -> object
@@ -336,7 +350,8 @@ Function _getSheetIdFromURL  //url:text
 	
 Function _getSSIdFromURL  //url:text
 	// accepts a url and extracts the Id of the sheet from that
-	C_TEXT:C284($1)
+	var $1 : Text
+	
 	$found:=Match regex:C1019("(?<=/spreadsheets/d/)([a-zA-Z0-9-_]+)";$1;1;$foundAt;$length)
 	If (Not:C34($found)
 		$0:=""

@@ -39,13 +39,12 @@ Class constructor  //(username:text, scopes:text, googleKey:text; connectionMeth
 	
 	
 	//<initialize properties>
-	This:C1470.access.expiresAt:=Current time:C178
+	This:C1470.createdAtTicks:=0  // will be corrected when we create the header, below
 	This:C1470.access.token:=New object:C1471()
 	//</initialize properties>
 	
 	
-	This:C1470.getHeader()  //initialize
-	
+	This:C1470.getHeader(True:C214)  //initialize and force refresh
 	// ===============================================================================================================
 	
 	
@@ -60,9 +59,25 @@ Function getHeader  //{forceRefresh:boolean}
 	End if 
 	
 	
+	//<see if the token has expired>
+	$now:=Tickcount:C458
+	$then:=This:C1470.createdAtTicks
+	Case of 
+		: (($now>0 & $then>0) | ($now<0 & $then<0))  // signs the same on both
+			$diff:=$now-$then
+		: (($now>0) & ($then<0))
+			$diff:=Abs:C99((MAXLONG:K35:2-$now)+($then-MAXLONG:K35:2))
+		Else   // $now<0 and $end>0
+			$diff:=($now-MAXLONG:K35:2)+(MAXLONG:K35:2-$then)
+	End case 
 	
-	$now:=Milliseconds:C459
-	If ($now<=This:C1470.access.expiresAt) & Not:C34($forceRefresh))  //token is still current
+	If ($diff>=(This:C1470.expiresIn*60))
+		$forceRefresh:=True:C214
+	End if   //$diff>=(This.access.expiresIn*60)
+	//</see if the token has expired>
+	
+	
+	If (Not:C34($forceRefresh))  //token is still current
 		$0:=This:C1470.access.header
 	Else   // request another token
 		
@@ -106,18 +121,12 @@ Function getHeader  //{forceRefresh:boolean}
 		If (This:C1470.status#200)
 			$0:=Null:C1517
 		Else   //$status=200
-			//<determine sign of the milliseconds>
-			$multiplier:=1
-			If ($now<0)
-				$multiplier:=-1
-			End if   //$now<0
-			//</determine the sign of the milliseconds>
-			This:C1470.access.expiresAt:=$now+($multiplier*This:C1470.access.token.expires_in*1000)  //get to milliseconds to compare to system clock
 			$0:=This:C1470.access.header  //return the entire object
+			This:C1470.createdAtTicks:=Tickcount:C458-600  //just to be safe, force refresh token 10 seconds before we think it's going to expire by aging it by 10 seconds.
 		End if   //status#200
-	End if   //(abs($now)<=abs(This.access.expiresAt)) & not($forceRefresh))
-	
+	End if   //(not($forceRefresh))
 	// _______________________________________________________________________________________________________________
+	
 	
 Function _Unix_Timestamp
 	C_LONGINT:C283($0;$time)
@@ -172,8 +181,8 @@ Function _Unix_Timestamp
 	End if 
 	
 	$0:=$time
-	
 	// _______________________________________________________________________________________________________________
+	
 	
 Function _URL_Escape
 	C_TEXT:C284($1;$0;$escaped)
@@ -214,9 +223,4 @@ Function _URL_Escape
 	End for 
 	
 	$0:=$escaped
-	
 	// _______________________________________________________________________________________________________________
-	
-	
-	// _______________________________________________________________________________________________________________
-	

@@ -30,5 +30,4 @@ Function _http  // (http_method:TEXT ; url:TEXT; body:TEXT; header:object)
 		Else   // error
 			$0:=Null:C1517
 	End case 
-	
 	// _______________________________________________________________________________________________________________

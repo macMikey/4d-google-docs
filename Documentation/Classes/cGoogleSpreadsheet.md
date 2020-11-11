@@ -377,6 +377,12 @@ Loads the spreadsheet data with default options if the spreadsheet has not been 
 
 
 
+### _http ( http_method:TEXT ; url:TEXT; body:TEXT; header:object )
+
+Overrides to ***cGoogleComms._http***: if it gets a specific error that makes it suspect that the token has expired, it force-refreshes the token and then tries again.
+
+
+
 ### \_queryRange (range:TEXT) -> Text
 Builds a range query string in A1 format for use in calls from the class
 
