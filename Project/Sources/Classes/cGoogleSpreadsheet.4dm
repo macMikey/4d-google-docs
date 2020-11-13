@@ -27,7 +27,7 @@ the request body is
 {
   "requests": [
     {
-      "duplicateSheet": 
+      "duplicateSheet":
          {
            "sourceSheetId": integer,
            "insertSheetIndex": integer,
@@ -306,7 +306,7 @@ Function _http  // (http_method:TEXT ; url:TEXT; body:TEXT; header:object)
 	var $1;$2;$3 : Text
 	var $4;$oResult;$0 : Object
 	$oResult:=Super:C1706._http($1;$2;$3;$4)
-	If (OB Is defined:C1231($oResult.value;"error"))  // error occurred
+	If (OB Is defined:C1231($oResult;"value.error"))  // error occurred"
 		If (($oResult.value.error.code=401) & ($oResult.value.error.status="UNAUTHENTICATED"))  //token expired, try again with a forced refresh on the token
 			$oResult:=Super:C1706._http($1;$2;$3;This:C1470._auth.getHeader(True:C214))  // $4 should be this._auth.getHeader()
 		End if   //($oResult.value.error.code=401) & ($oResult.value.error.status="UNAUTHENTICATED")
@@ -395,7 +395,7 @@ Function _queryRange  //(rangeString:text)
 		$sheetPart:=Substring:C12($0;1;($bangPos-1))  // beginning until just before the bang
 		$cellsPart:=Substring:C12($0;($bangPos+1);Length:C16($0))
 		If (($sheetPart[[1]]#"'") & ($sheetPart[[Length:C16($sheetPart)]]#"'"))  // sheet name isn't already quoted
-			$sheetPart:="'"+$sheetPart+"'"  // surround the sheet name with single quotes so we don't have to worry about spaces
+			$sheetPart:="'"+Super:C1706._URL_Escape($sheetPart)+"'"  // surround the sheet name with single quotes so we don't have to worry about spaces
 		End if 
 		$0:=$sheetPart+$bang+$cellsPart  // put it back together
 		//</quote the sheet name so names with spaces will be ok>
@@ -481,3 +481,4 @@ Function _ss_values_clear
 	
 	
 	// ===============================================================================================================
+	

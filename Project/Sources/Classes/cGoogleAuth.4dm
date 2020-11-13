@@ -5,7 +5,7 @@ Class extends cGoogleComms
 
 Class constructor  //(username:text, scopes:text, googleKey:text; connectionMethod:text)
 	
-	C_TEXT:C284($1;$2;$3;$4)
+	var $1;$2;$3;$4 : Text
 	Super:C1705($4)
 	
 	//<constants>
@@ -13,7 +13,7 @@ Class constructor  //(username:text, scopes:text, googleKey:text; connectionMeth
 	This:C1470.expiresIn:=3600  //seconds
 	This:C1470.oHead:=New object:C1471("alg";"RS256";"typ";"JWT")
 	This:C1470.url:="https://oauth2.googleapis.com/token"
-	This:C1470.bodyPrefix:="grant_type="+This:C1470._URL_Escape("urn:ietf:params:oauth:grant-type:jwt-bearer")+"&assertion="  //xxx
+	This:C1470.bodyPrefix:="grant_type="+Super:C1706._URL_Escape("urn:ietf:params:oauth:grant-type:jwt-bearer")+"&assertion="
 	This:C1470.access:=New object:C1471()
 	This:C1470.access.header:=New object:C1471()
 	This:C1470.access.header.name:="Authorization"
@@ -52,7 +52,7 @@ Function getHeader  //{forceRefresh:boolean}
 	// returns header object to be used on subsequent calls or null
 	// retrieves a fresh access token if old one expired
 	
-	C_BOOLEAN:C305($1)  // force refresh
+	var $1 : Boolean  // force refresh
 	$forceRefresh:=False:C215
 	If (Count parameters:C259>0)
 		$forceRefresh:=$1
@@ -63,7 +63,7 @@ Function getHeader  //{forceRefresh:boolean}
 	$now:=Tickcount:C458
 	$then:=This:C1470.createdAtTicks
 	Case of 
-		: (($now>0 & $then>0) | ($now<0 & $then<0))  // signs the same on both
+		: ((($now>0) & ($then>0)) | (($now<0) & ($then<0)))  // signs the same on both
 			$diff:=$now-$then
 		: (($now>0) & ($then<0))
 			$diff:=Abs:C99((MAXLONG:K35:2-$now)+($then-MAXLONG:K35:2))
@@ -83,7 +83,7 @@ Function getHeader  //{forceRefresh:boolean}
 		
 		
 		//<build jwt/assertion>
-		C_OBJECT:C1216($ojwt)
+		var $ojwt : Object
 		$ojwt:=New object:C1471()
 		
 		//<build jwt>
@@ -105,7 +105,7 @@ Function getHeader  //{forceRefresh:boolean}
 		$body:=This:C1470.bodyPrefix+$assertion
 		
 		//<get the access token>
-		C_OBJECT:C1216($oResult)
+		var $oResult : Object
 		$oResult:=This:C1470._http(HTTP POST method:K71:2;This:C1470.url;$body;This:C1470.jwt.header)
 		This:C1470.status:=$oResult.status
 		This:C1470.access.token:=$oResult.value
@@ -116,7 +116,7 @@ Function getHeader  //{forceRefresh:boolean}
 		This:C1470.access.header.value:=This:C1470.access.token.token_type+" "+This:C1470.access.token.access_token
 		//</headers to be used in subsequent calls.  token is embedded in the header>
 		
-		C_OBJECT:C1216($0)
+		var $0 : Object
 		
 		If (This:C1470.status#200)
 			$0:=Null:C1517
@@ -129,7 +129,7 @@ Function getHeader  //{forceRefresh:boolean}
 	
 	
 Function _Unix_Timestamp
-	C_LONGINT:C283($0;$time)
+	var $0;$time : Integer
 	
 	$timestamp:=Timestamp:C1445
 	
@@ -138,10 +138,10 @@ Function _Unix_Timestamp
 	
 	If (Match regex:C1019("((\\d{4})-(\\d{2})-(\\d{2}))T(\\d{2}:\\d{2}:\\d{2})\\.(\\d{3})Z";$timestamp;1;$pos;$len))
 		
-		C_DATE:C307($date)
+		var $date : Date
 		$date:=Date:C102(Substring:C12($timestamp;$pos{1};$len{1}))
 		
-		C_LONGINT:C283($yyyy;$mm;$dd)
+		var $yyyy;$mm;$dd : Integer
 		$yyyy:=Num:C11(Substring:C12($timestamp;$pos{2};$len{2}))
 		$mm:=Num:C11(Substring:C12($timestamp;$pos{3};$len{3}))
 		$dd:=Num:C11(Substring:C12($timestamp;$pos{4};$len{4}))  //eventually will be number of days since Jan 1 this year
@@ -183,44 +183,3 @@ Function _Unix_Timestamp
 	$0:=$time
 	// _______________________________________________________________________________________________________________
 	
-	
-Function _URL_Escape
-	C_TEXT:C284($1;$0;$escaped)
-	
-	C_LONGINT:C283($i)
-	C_BOOLEAN:C305($shouldEscape)
-	C_BLOB:C604($data)
-	
-	For ($i;1;Length:C16($1))
-		
-		$char:=Substring:C12($1;$i;1)
-		$code:=Character code:C91($char)
-		
-		$shouldEscape:=False:C215
-		
-		Case of 
-			: ($code=45)
-			: ($code=46)
-			: ($code>47) & ($code<58)
-			: ($code>63) & ($code<91)
-			: ($code=95)
-			: ($code>96) & ($code<123)
-			: ($code=126)
-			Else 
-				$shouldEscape:=True:C214
-		End case 
-		
-		If ($shouldEscape)
-			CONVERT FROM TEXT:C1011($char;"utf-8";$data)
-			For ($j;0;BLOB size:C605($data)-1)
-				$hex:=String:C10($data{$j};"&x")
-				$escaped:=$escaped+"%"+Substring:C12($hex;Length:C16($hex)-1)
-			End for 
-		Else 
-			$escaped:=$escaped+$char
-		End if 
-		
-	End for 
-	
-	$0:=$escaped
-	// _______________________________________________________________________________________________________________

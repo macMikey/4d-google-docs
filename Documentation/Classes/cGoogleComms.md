@@ -77,3 +77,17 @@ In some cases, **.error** might also contain a collection, **.details** (e.g. wh
       .status                  : interprets the code
 ```
 
+
+
+### \_URL_Escape ( textToEscape : TEXT ) -> TEXT
+
+url-escapes text that will be used in a url that might contain special characters that will break the url, like `/`, `<`, `%`, etc.
+
+
+
+#### Example
+
+```4d
+$x := Super._URL_Escape ($sheetName)
+```
+
