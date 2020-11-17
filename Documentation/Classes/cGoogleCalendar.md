@@ -29,7 +29,7 @@ In addition to the other steps described in the **cGoogleAuth** documentation, y
 
 
 
-## Constructor Example
+#### Constructor Example
 
 ```4d
 var s : Object
@@ -40,25 +40,26 @@ End if
 
 
 
+## Public Properties
+
+Property|Datatype|Description
+--|--|--
+status|Integer|http status
+error|object|http error object (if status <>200)
+
+
+
 ## API
 
-### createCalendar( calendarName: text) -> object
+### createCalendar( calendarName: text) -> boolean
 
-Implements [Calenders:insert](https://developers.google.com/calendar/v3/reference/calendars/insert).  If the result is successful, a [Calendars Resource](https://developers.google.com/calendar/v3/reference/calendars#resource) is returned.
-
-
-
-#### Request body
-
-In the request body, supply a [Calendars Resource](https://developers.google.com/calendar/v3/reference/calendars#resource) with the following properties:
-
-| Property name           | Required|Datatype   | Description            |
-| :---------------------- | :------- | :--------------------- | :------- |
-| `summary`               | **Required**|`string` | Title of the calendar. |
+* Implements [Calenders:insert](https://developers.google.com/calendar/v3/reference/calendars/insert).
+* If the result is successful, **true** is returned and the calendar's metadata is loaded into the private property **this._properties**.
+* If the result is unsuccessful then **false** is returned, and **this.error** will have the error object.
 
 
 
-A [Calendars Resource](https://developers.google.com/calendar/v3/reference/calendars#resource) contains the following properties:
+The **this._properties** is an instance of [Calendars Resource](https://developers.google.com/calendar/v3/reference/calendars#resource):
 
 | Property name                                           | Value           | Description                                                  | Notes    |
 | :------------------------------------------------------ | :-------------- | :----------------------------------------------------------- | :------- |
@@ -74,7 +75,19 @@ A [Calendars Resource](https://developers.google.com/calendar/v3/reference/calen
 
 
 
-### getCalendarList () -> collection
+#### Example:
+
+```4d
+if not($calendar.createCalendar("test")) // fail
+   $errorMessage:=$ss.parseError()
+   ALERT($errorMessage)
+   ABORT
+End If
+```
+
+
+
+### getCalendarList () -> object
 
 Implements [CalendarList: list](https://developers.google.com/calendar/v3/reference/calendarList/list), but ***does not implement any of the optional parameters***.
 
@@ -180,7 +193,46 @@ If successful, this method returns a response body object with the following str
 
 
 
+#### Example:
 
+```4d
+$calendarList:=$calendar.getCalendarList()
+$id:=$calendar.items[0].id
+```
+
+
+
+### getEvents () -> boolean
+
+Implements [Events:list](GET https://www.googleapis.com/calendar/v3/calendars/calendarId/events)
+
+* Does not implement any optional parameters
+
+* Uses the calendar ID set using [setID](#setid)
+* Loads ***all*** events for the calendar into the private **this._events** property
+  * Order is "unspecified, stable"
+  * Does not include deleted events
+  * Does not include hidden invitations
+  * Returns recurring events in all their glory
+  * Time zone is the time zone of the calendar
+* Returns **True** if the operation was successful and **False** if it was not.
+
+
+
+### setID ( calendarID : text ) -> $idIsAValidCalendar:boolean
+
+* Sets the private **this._properties.ID** of the *cGoogleCalendar* object to the ID passed in **calendarID**
+* Checks to see if ID is a valid calendar, and returns a boolean indicating that it is or is not.
+* If ID is a valid calendar, loads the calender properties into the private **this._properties** property per [Calendars: get](https://developers.google.com/calendar/v3/reference/calendars/get)
+
+#### Exampe:
+
+```4d
+$valid:=$cal.setID($calendarID)
+If (not($valid))
+   Alert ("That is not a valid calendar id.")
+End if
+```
 
 
 
@@ -195,6 +247,8 @@ If successful, this method returns a response body object with the following str
 |--|--|--|
 | _apiKey |Text|from the Google Cloud Project Console             |
 | _auth |Text|(Reference to) the authorization object created by **cGoogleAuth** |
+| _properties |Object|The [Calendars Resource](https://developers.google.com/calendar/v3/reference/calendars#resource) metadata for the calendar assigned to **this** |
+| _events     |Object| |
 
 
 
@@ -210,3 +264,5 @@ Overrides to ***cGoogleComms._http***: if it gets a specific error that makes it
 https://developers.google.com/calendar
 
 https://developers.google.com/calendar/quickstart/js
+
+[Calendars Resource Metadata](https://developers.google.com/calendar/v3/reference/calendars#resource)

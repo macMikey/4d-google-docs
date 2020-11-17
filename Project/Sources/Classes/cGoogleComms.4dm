@@ -8,6 +8,21 @@ Class constructor  // ({connectionMethod : text } )
 	// ===============================================================================================================
 	
 	
+Function parseError  //()
+	// parses an error object and returns the contents
+	var $oError : Object
+	$cr:=Char:C90(Carriage return:K15:38)
+	$oError:=This:C1470.sheetData.error
+	$0:=""
+	If ($oError#Null:C1517)
+		$0:="Code: "+String:C10($oError.code)+$cr+\
+			"Status: "+$oError.status+$cr+\
+			"Message: "+$oError.message
+	End if 
+	// _______________________________________________________________________________________________________________
+	
+	
+	
 Function _http  // (http_method:TEXT ; url:TEXT; body:TEXT; header:object)
 	// returns an object with properties  status:TEXT ; value:TEXT
 	var $1;$2;$3 : Text

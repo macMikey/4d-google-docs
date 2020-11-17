@@ -224,19 +224,6 @@ Function load  // {(rangeString:text , includeGridData:boolean)}
 	// _______________________________________________________________________________________________________________
 	
 	
-Function parseError  //()
-	// parses an error object and returns the contents
-	var $oError : Object
-	$cr:=Char:C90(Carriage return:K15:38)
-	$oError:=This:C1470.sheetData.error
-	$0:=""
-	If ($oError#Null:C1517)
-		$0:="Code: "+String:C10($oError.code)+$cr+\
-			"Status: "+$oError.status+$cr+\
-			"Message: "+$oError.message
-	End if 
-	// _______________________________________________________________________________________________________________
-	
 	
 Function setValues  //(range:TEXT ; valuesObject: Object ; valueInputOption:Text {; includeValuesInResponse: Boolean ; responseValueRenderOption: Text ; responseDateTimeRenderOption:Text})
 	// PUT https://sheets.googleapis.com/v4/spreadsheets/{spreadsheetId}/values/{range}

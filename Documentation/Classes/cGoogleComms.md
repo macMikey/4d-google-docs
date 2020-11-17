@@ -26,7 +26,34 @@ End if
 ```
 
 
+
+## API
+
+### parseError()
+
+Parses an (undocumented, as far as I can tell) Error Object as a multiple-line text variable.
+
+Currently, those lines are:
+**Code:**
+**Status:**
+**Message:**
+
+#### Example:
+
+```4d
+$oResult:=$ss.load("Sheet1")
+If ($oResult#Null)
+     //success
+Else
+   $errorMessage:=$ss.parseError()
+   ALERT($errorMessage)
+End If
+```
+
+
+
 ## Internal API
+
 As this is inended to be private and extended by other google classes, the API is also "internal", i.e. not intended for use outside of the google library
 
 ### \_http ( httpMethod:longint ; url:TEXT ; body: text header:object) -> Object

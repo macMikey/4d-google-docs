@@ -15,11 +15,19 @@ End if
 
 var $c : cs:C1710.cGoogleCalendar
 
-//<get list of calendars>
 $c:=cs:C1710.cGoogleCalendar.new(<>a;$apiKey)
-$calendarList:=$c.getCalendarList()
-//</get list of calendars>
 
-$c1:=$c.createCalendar("test")
+TRACE:C157
+$calendarList:=$c.getCalendarList()
+$id:=$calendarList.items[0].id
+
+TRACE:C157
+$success:=$c.setID($id)  // assign the calendar to the id of the first calendar
+
+TRACE:C157
+$success:=$c.getEvents()
+
+TRACE:C157
+$success:=$c.createCalendar("test")  // create a new calendar called "test"
 
 TRACE:C157

@@ -1,10 +1,10 @@
 Class extends cGoogleComms
 
 
-Class constructor  // oGoogleAuth:object {; calendar_url:text}
+Class constructor  // oGoogleAuth:object ; apiKey:text {; calendar_url:text}
 	
 	var $1 : Object
-	var $2 : Text
+	var $2;$3 : Text
 	
 	Super:C1705("native")  //comms type
 	This:C1470._auth:=$1
@@ -12,7 +12,7 @@ Class constructor  // oGoogleAuth:object {; calendar_url:text}
 	This:C1470._apiKey:=$2
 	
 	If (Count parameters:C259>=3)  // url for calendar specified
-		This:C1470.ID:=This:C1470._getIDFromURL($3)
+		This:C1470.setID($3)
 	Else 
 		This:C1470.id:=Null:C1517
 	End if 
@@ -28,7 +28,7 @@ Class constructor  // oGoogleAuth:object {; calendar_url:text}
 	// ===============================================================================================================
 	
 	
-Function createCalendar  //( name:text )
+Function createCalendar  //( name:text ) -> boolean
 	//POST https://www.googleapis.com/calendar/v3/calendars
 	
 /*
@@ -38,22 +38,25 @@ the body is
 }
 */
 	
-	var $oResult;$0 : Object
+	var $oResult : Object
 	var $1 : Text
 	var $oSummaryBody : Object
+	var $0 : Boolean
 	
 	
 	$url:=This:C1470.endpoint+"calendars"
 	$oSummaryBody:=New object:C1471("summary";$1)
+	This:C1470.error:=Null:C1517
 	$oResult:=This:C1470._http(HTTP POST method:K71:2;$url;JSON Stringify:C1217($oSummaryBody);This:C1470._auth.getHeader())
 	This:C1470.status:=$oResult.status
-	This:C1470.sheetData:=$oResult.value
 	
 	
-	If (This:C1470.status#200)
-		$0:=Null:C1517
-	Else   //fail
-		$0:=This:C1470.sheetData
+	If (This:C1470.status#200)  //fail
+		$0:=False:C215
+		This:C1470.error:=$oResult.status
+	Else   //ok
+		This:C1470._properties:=OB Copy:C1225($oResult.value)
+		$0:=True:C214
 	End if   //$status#200
 	// _______________________________________________________________________________________________________________
 	
@@ -68,17 +71,72 @@ does not implement any of the optional parameters
 	
 	
 	$url:=This:C1470.endpoint+"users/me/calendarList"
+	This:C1470.error:=Null:C1517
 	$oResult:=This:C1470._http(HTTP GET method:K71:1;$url;"";This:C1470._auth.getHeader())
 	This:C1470.status:=$oResult.status
-	This:C1470.sheetData:=$oResult.value
 	
 	
-	If (This:C1470.status#200)
+	If (This:C1470.status#200)  //fail
 		$0:=Null:C1517
-	Else   //fail
-		$0:=This:C1470.sheetData
+		This:C1470.error:=$oResult.value
+	Else   //ok
+		$0:=$oResult.value
 	End if   //$status#200
 	// _______________________________________________________________________________________________________________
+	
+	
+Function getEvents()->boolean
+	//GET https://www.googleapis.com/calendar/v3/calendars/<calendarId>/events
+/*
+Does not implement any optional parameters
+*/
+	var $oResult : Object
+	var $0 : Boolean
+	
+	$url:=This:C1470.endpoint+"calendars/"+Super:C1706._URL_Escape(This:C1470._properties.id)+"/events"
+	This:C1470.error:=Null:C1517
+	This:C1470._events:=New collection:C1472()
+	$urlThisPass:=$url  // first pass we don't have a page to retrieve
+	$done:=False:C215  // multiple passes to get all the events
+	$pass:=0  //debugx
+	
+	While (Not:C34($done))
+		$pass:=$pass+1  //debugx
+		$oResult:=This:C1470._http(HTTP GET method:K71:1;$urlThisPass;"";This:C1470._auth.getHeader())
+		This:C1470.status:=$oResult.status
+		
+		If (This:C1470.status#200)  //fail
+			$0:=False:C215
+			This:C1470.error:=$oResult.value
+			This:C1470._events:=New collection:C1472()  // in case any have been assigned, already
+		Else   //ok
+			$0:=True:C214
+			This:C1470._events:=This:C1470._events.concat($oResult.value.items)
+		End if   //$status#200
+		
+		$nextPageToken:=$oResult.value.nextPageToken
+		If ($nextPageToken="")  //done
+			$done:=True:C214
+		Else   // more to come
+			$urlThisPass:=$url+"?pageToken="+Super:C1706._URL_Escape($nextPageToken)
+		End if   //$nextPageToken=""
+	End while   // not ($done)
+	
+	// _______________________________________________________________________________________________________________
+	
+	
+	
+Function setID  // (id:text) -> boolean
+	// sets the id of the object to the calendar id specified in id and tries to load the calendar metadata
+	// returns whether the id is valid or not based on the load result
+	var $1 : Text
+	var $0 : Boolean
+	
+	This:C1470._properties:=New object:C1471()
+	This:C1470._properties.id:=$1
+	$0:=This:C1470._get()
+	// _______________________________________________________________________________________________________________
+	
 	
 	
 	// ===============================================================================================================
@@ -88,12 +146,40 @@ does not implement any of the optional parameters
 	// ===============================================================================================================
 	
 	
+Function _get()->boolean
+	// GET https://www.googleapis.com/calendar/v3/calendars/<calendarId>
+	// loads the metadata for this._properties.id and returns whether the result is valid or not.
+	var $oResult : Object
+	var $0 : Boolean
+	
+	
+	$url:=This:C1470.endpoint+"calendars/"+This:C1470._properties.id
+	This:C1470.error:=Null:C1517
+	$oResult:=This:C1470._http(HTTP GET method:K71:1;$url;"";This:C1470._auth.getHeader())
+	This:C1470.status:=$oResult.status
+	
+	
+	If (This:C1470.status#200)  //fail
+		$0:=False:C215
+		This:C1470.error:=$oResult.value
+	Else   //ok
+		$0:=True:C214
+		This:C1470._properties:=OB Copy:C1225($oResult.value)
+	End if   //$status#200
+	// _______________________________________________________________________________________________________________ 
+	
+	
 Function _http  // (http_method:TEXT ; url:TEXT; body:TEXT; header:object)
 	// returns an object with properties  status:TEXT ; value:TEXT
 	//tries the cGoogleComms._http.  If it fails, it checks to see if that is because the token expired, and if so, tries again.
 	var $1;$2;$3 : Text
 	var $4;$oResult;$0 : Object
-	$2:=$2+"?key="+This:C1470._apiKey
+	If (Position:C15("?";$2)>0)  // contains "?", can't use it again
+		$connector:="&"
+	Else   // doesn't contain "?"
+		$connector:="?"
+	End if 
+	$2:=$2+$connector+"key="+This:C1470._apiKey
 	$oResult:=Super:C1706._http($1;$2;$3;$4)
 	If (OB Is defined:C1231($oResult;"value.error"))  // error occurred"
 		If (($oResult.value.error.code=401) & ($oResult.value.error.status="UNAUTHENTICATED"))  //token expired, try again with a forced refresh on the token
