@@ -13,10 +13,13 @@ If (OB Is empty:C1297(<>a))
 End if 
 //</initialize google auth object>
 
+var $c : cs:C1710.cGoogleCalendar
+
 //<get list of calendars>
 $c:=cs:C1710.cGoogleCalendar.new(<>a;$apiKey)
 $calendarList:=$c.getCalendarList()
 //</get list of calendars>
 
+$c1:=$c.createCalendar("test")
 
 TRACE:C157

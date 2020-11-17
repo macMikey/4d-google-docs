@@ -1,3 +1,5 @@
+
+
 # Class cGoogleCalendar
 
 
@@ -39,6 +41,38 @@ End if
 
 
 ## API
+
+### createCalendar( calendarName: text) -> object
+
+Implements [Calenders:insert](https://developers.google.com/calendar/v3/reference/calendars/insert).  If the result is successful, a [Calendars Resource](https://developers.google.com/calendar/v3/reference/calendars#resource) is returned.
+
+
+
+#### Request body
+
+In the request body, supply a [Calendars Resource](https://developers.google.com/calendar/v3/reference/calendars#resource) with the following properties:
+
+| Property name           | Required|Datatype   | Description            |
+| :---------------------- | :------- | :--------------------- | :------- |
+| `summary`               | **Required**|`string` | Title of the calendar. |
+
+
+
+A [Calendars Resource](https://developers.google.com/calendar/v3/reference/calendars#resource) contains the following properties:
+
+| Property name                                           | Value           | Description                                                  | Notes    |
+| :------------------------------------------------------ | :-------------- | :----------------------------------------------------------- | :------- |
+| `conferenceProperties`                                  | `nested object` | Conferencing properties for this calendar, for example what types of conferences are allowed. |          |
+| `conferenceProperties.allowedConferenceSolutionTypes[]` | `list`          | The types of conference solutions that are supported for this calendar. The possible values are: `"eventHangout"``"eventNamedHangout"``"hangoutsMeet"`Optional. |          |
+| `description`                                           | `string`        | Description of the calendar. Optional.                       | writable |
+| `etag`                                                  | `etag`          | ETag of the resource.                                        |          |
+| `id`                                                    | `string`        | Identifier of the calendar. To retrieve IDs call the [calendarList.list()](https://developers.google.com/calendar/v3/reference/calendarList/list)method. |          |
+| `kind`                                                  | `string`        | Type of the resource ("`calendar#calendar`").                |          |
+| `location`                                              | `string`        | Geographic location of the calendar as free-form text. Optional. | writable |
+| `summary`                                               | `string`        | Title of the calendar.                                       | writable |
+| `timeZone`                                              | `string`        | The time zone of the calendar. (Formatted as an IANA Time Zone Database name, e.g. "Europe/Zurich".) Optional. | writable |
+
+
 
 ### getCalendarList () -> collection
 

@@ -18,7 +18,7 @@ Class constructor  // oGoogleAuth:object {; calendar_url:text}
 	End if 
 	
 	//<initialize other values>
-	This:C1470.endpoint:="https://www.googleapis.com/calendar/v3/users/me/"
+	This:C1470.endpoint:="https://www.googleapis.com/calendar/v3/"
 	//</initialize other values>
 	
 	// ===============================================================================================================
@@ -28,17 +28,46 @@ Class constructor  // oGoogleAuth:object {; calendar_url:text}
 	// ===============================================================================================================
 	
 	
+Function createCalendar  //( name:text )
+	//POST https://www.googleapis.com/calendar/v3/calendars
+	
+/*
+the body is
+{
+  "summary": ""
+}
+*/
+	
+	var $oResult;$0 : Object
+	var $1 : Text
+	var $oSummaryBody : Object
+	
+	
+	$url:=This:C1470.endpoint+"calendars"
+	$oSummaryBody:=New object:C1471("summary";$1)
+	$oResult:=This:C1470._http(HTTP POST method:K71:2;$url;JSON Stringify:C1217($oSummaryBody);This:C1470._auth.getHeader())
+	This:C1470.status:=$oResult.status
+	This:C1470.sheetData:=$oResult.value
+	
+	
+	If (This:C1470.status#200)
+		$0:=Null:C1517
+	Else   //fail
+		$0:=This:C1470.sheetData
+	End if   //$status#200
+	// _______________________________________________________________________________________________________________
+	
+	
 Function getCalendarList  // () -> Collection
 	//GET https://www.googleapis.com/calendar/v3/users/me/calendarList
 /*
 does not implement any of the optional parameters
 */
 	
-	// make sure we walk all the pages before returning a list
 	var $oResult;$0 : Object
 	
 	
-	$url:=This:C1470.endpoint+"calendarList"
+	$url:=This:C1470.endpoint+"users/me/calendarList"
 	$oResult:=This:C1470._http(HTTP GET method:K71:1;$url;"";This:C1470._auth.getHeader())
 	This:C1470.status:=$oResult.status
 	This:C1470.sheetData:=$oResult.value
