@@ -317,6 +317,7 @@ End If
 
 |Field|Description|
 |--|--|
+|_auth|(Reference to) the authorization object created by **cGoogleAuth**|
 |spreadsheetID|The part of the URL after /spreadsheets/d/|
 |endpoint|the base url for the API to use|
 |status|http status of the request|

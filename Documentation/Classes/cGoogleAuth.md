@@ -25,7 +25,8 @@ Manages the authorization and ongoing access with Google.
 ## Constructor Example
 
 ```4d
-C_OBJECT(oGoogleAuth)
+var oGoogleAuth : Object
+$scopes:="https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/calendar"
 If (OB Is empty ($oGoogleAuth))
 	$oGoogleAuth:=cs.cGoogleAuth.new($username;$scopes;$key;"native")
 End if
