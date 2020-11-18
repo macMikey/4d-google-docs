@@ -56,7 +56,10 @@ End If
 
 As this is inended to be private and extended by other google classes, the API is also "internal", i.e. not intended for use outside of the google library
 
+
+
 ### \_http ( httpMethod:longint ; url:TEXT ; body: text header:object) -> Object
+
 Executes an http call and returns an object containing the server's response and the status returned from the server.  The idea is to enable support for libCurl, ntk, or native 4D http calls by wrapping all of it.
 
 |Parameter Name|Required?|Parameter Type|Default|Description|

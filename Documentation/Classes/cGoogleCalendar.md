@@ -1,5 +1,3 @@
-
-
 # Class cGoogleCalendar
 
 
@@ -84,6 +82,16 @@ if not($calendar.createCalendar("test")) // fail
    ABORT
 End If
 ```
+
+
+
+### eventDelete (eventID:text) -> boolean
+
+Implements [Events: delete](https://developers.google.com/calendar/v3/reference/events/delete)
+
+* Does not implement any optional parameters
+* If successful, **this._events** is updated, removing the event in question
+* Returns **True** if delete was successful and **False** if it was not.
 
 
 
@@ -204,7 +212,7 @@ $id:=$calendar.items[0].id
 
 ### getEvents () -> boolean
 
-Implements [Events:list](GET https://www.googleapis.com/calendar/v3/calendars/calendarId/events)
+Implements [Events:list](https://developers.google.com/calendar/v3/reference/events/list)
 
 * Does not implement any optional parameters
 
@@ -216,6 +224,46 @@ Implements [Events:list](GET https://www.googleapis.com/calendar/v3/calendars/ca
   * Returns recurring events in all their glory
   * Time zone is the time zone of the calendar
 * Returns **True** if the operation was successful and **False** if it was not.
+
+```
+{
+  "kind": "calendar#events",
+  "etag": etag,
+  "summary": string,
+  "description": string,
+  "updated": datetime,
+  "timeZone": string,
+  "accessRole": string,
+  "defaultReminders": [
+    {
+      "method": string,
+      "minutes": integer
+    }
+  ],
+  "nextPageToken": string,
+  "nextSyncToken": string,
+  "items": [
+    events Resource
+  ]
+}
+```
+
+#### Events Resource Format
+| Property name                | Value      | Description                                                  | Notes    |
+| :--------------------------- | :--------- | :----------------------------------------------------------- | :------- |
+| `kind`                       | `string`   | Type of the collection ("`calendar#events`").                |          |
+| `etag`                       | `etag`     | ETag of the collection.                                      |          |
+| `summary`                    | `string`   | Title of the calendar. Read-only.                            |          |
+| `description`                | `string`   | Description of the calendar. Read-only.                      |          |
+| `updated`                    | `datetime` | Last modification time of the calendar (as a [RFC3339](https://tools.ietf.org/html/rfc3339) timestamp). Read-only. |          |
+| `timeZone`                   | `string`   | The time zone of the calendar. Read-only.                    |          |
+| `accessRole`                 | `string`   | The user's access role for this calendar. Read-only. Possible values are: "`none`" - The user has no access."`freeBusyReader`" - The user has read access to free/busy information."`reader`" - The user has read access to the calendar. Private events will appear to users with reader access, but event details will be hidden."`writer`" - The user has read and write access to the calendar. Private events will appear to users with writer access, and event details will be visible."`owner`" - The user has ownership of the calendar. This role has all of the permissions of the writer role with the additional ability to see and manipulate ACLs. |          |
+| `defaultReminders[]`         | `list`     | The default reminders on the calendar for the authenticated user. These reminders apply to all events on this calendar that do not explicitly override them (i.e. do not have `reminders.useDefault` set to True). |          |
+| `defaultReminders[].method`  | `string`   | The method used by this reminder. Possible values are: "`email`" - Reminders are sent via email."`popup`" - Reminders are sent via a UI popup.Required when adding a reminder. | writable |
+| `defaultReminders[].minutes` | `integer`  | Number of minutes before the start of the event when the reminder should trigger. Valid values are between 0 and 40320 (4 weeks in minutes). Required when adding a reminder. | writable |
+| `nextPageToken`              | `string`   | Token used to access the next page of this result. Omitted if no further results are available, in which case `nextSyncToken` is provided. |          |
+| `items[]`                    | `list`     | List of events on the calendar.                              |          |
+| `nextSyncToken`              | `string`   | Token used at a later point in time to retrieve only the entries that have changed since this result was returned. Omitted if further results are available, in which case `nextPageToken` is provided. |          |
 
 
 
@@ -253,6 +301,8 @@ End if
 
 
 ## Internal API
+
+
 
 ### _http ( http_method:TEXT ; url:TEXT; body:TEXT; header:object )
 

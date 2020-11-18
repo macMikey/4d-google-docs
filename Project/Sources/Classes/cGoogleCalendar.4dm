@@ -6,10 +6,15 @@ Class constructor  // oGoogleAuth:object ; apiKey:text {; calendar_url:text}
 	var $1 : Object
 	var $2;$3 : Text
 	
+	
+	
 	Super:C1705("native")  //comms type
 	This:C1470._auth:=$1
 	
 	This:C1470._apiKey:=$2
+	
+	This:C1470.endpoint:="https://www.googleapis.com/calendar/v3/"  // need to do this before call this.setID
+	
 	
 	If (Count parameters:C259>=3)  // url for calendar specified
 		This:C1470.setID($3)
@@ -17,9 +22,6 @@ Class constructor  // oGoogleAuth:object ; apiKey:text {; calendar_url:text}
 		This:C1470.id:=Null:C1517
 	End if 
 	
-	//<initialize other values>
-	This:C1470.endpoint:="https://www.googleapis.com/calendar/v3/"
-	//</initialize other values>
 	
 	// ===============================================================================================================
 	
@@ -61,6 +63,47 @@ the body is
 	// _______________________________________________________________________________________________________________
 	
 	
+Function eventDelete  // (eventID:text) -> boolean
+	//DELETE https://www.googleapis.com/calendar/v3/calendars/<calendarId>/events/<eventId>
+/*
+does not implement any optional parameters
+*/
+	var $oResult : Object
+	var $1 : Text
+	
+	$url:=This:C1470.endpoint+"calendars/"+This:C1470._properties.id+"/events/"+$1
+	This:C1470.error:=Null:C1517
+	$oResult:=This:C1470._http(HTTP DELETE method:K71:5;$url;"";This:C1470._auth.getHeader())
+	This:C1470.status:=$oResult.status
+	
+	
+	If (This:C1470.status#204)  //fail
+		$0:=False:C215
+		This:C1470.error:=$oResult.value
+	Else   //ok
+		$0:=True:C214
+		//<remove from collection>
+		$row:=-1
+		For each ($event;This:C1470._events) Until ($event.id=$1)
+			$row:=$row+1
+		End for each 
+		If ($row#This:C1470._events.length)  //found it
+			This:C1470._events.remove($row)
+		End if 
+		
+/*
+as of r4 you can't use findIndex with a class function or a super class function.  this code is here for the day when we can.
+$row:=This._events.findIndex("_findRowForValue";"id";$1)
+If ($row>=0)
+This._events.remove($row)
+End if 
+*/
+		//</remove from collection>
+	End if   //$status#200
+	// _______________________________________________________________________________________________________________
+	
+	
+	
 Function getCalendarList  // () -> Collection
 	//GET https://www.googleapis.com/calendar/v3/users/me/calendarList
 /*
@@ -91,9 +134,10 @@ Function getEvents()->boolean
 Does not implement any optional parameters
 */
 	var $oResult : Object
-	var $0 : Boolean
+	var $0;$done : Boolean
+	var $url;$urlThisPass;$nextPageToken : Text
 	
-	$url:=This:C1470.endpoint+"calendars/"+Super:C1706._URL_Escape(This:C1470._properties.id)+"/events"
+	$url:=This:C1470.endpoint+"calendars/"+This:C1470._properties.id+"/events"
 	This:C1470.error:=Null:C1517
 	This:C1470._events:=New collection:C1472()
 	$urlThisPass:=$url  // first pass we don't have a page to retrieve
@@ -108,7 +152,7 @@ Does not implement any optional parameters
 		If (This:C1470.status#200)  //fail
 			$0:=False:C215
 			This:C1470.error:=$oResult.value
-			This:C1470._events:=New collection:C1472()  // in case any have been assigned, already
+			This:C1470._events.clear()  // in case any have been assigned, already
 		Else   //ok
 			$0:=True:C214
 			This:C1470._events:=This:C1470._events.concat($oResult.value.items)
@@ -118,10 +162,9 @@ Does not implement any optional parameters
 		If ($nextPageToken="")  //done
 			$done:=True:C214
 		Else   // more to come
-			$urlThisPass:=$url+"?pageToken="+Super:C1706._URL_Escape($nextPageToken)
+			$urlThisPass:=$url+"?pageToken="+$nextPageToken
 		End if   //$nextPageToken=""
 	End while   // not ($done)
-	
 	// _______________________________________________________________________________________________________________
 	
 	

@@ -21,6 +21,19 @@ Function parseError  //()
 	End if 
 	// _______________________________________________________________________________________________________________
 	
+/* as of r4 you can't use findIndex with a class function or a super function.  i leave this here for the day when that gets fixed.
+Function _findRowForValue  // $columnNumberOrProperty ; $value -> index of row
+// used to search column/property $columnNumberOrProperty for value $value in a collection or object
+	
+var $1 : Object
+var $2;$columnOrProperty : Variant
+var $3;$value : Text
+	
+$columnOrProperty:=$2
+$value:=$3
+$1.result:=$1.value[$columnOrProperty]=$value
+// _______________________________________________________________________________________________________________
+*/
 	
 	
 Function _http  // (http_method:TEXT ; url:TEXT; body:TEXT; header:object)
