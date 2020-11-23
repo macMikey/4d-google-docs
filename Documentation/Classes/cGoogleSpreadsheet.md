@@ -218,6 +218,27 @@ End If
 ```
 
 
+### parseError()
+
+Parses an (undocumented) Error Object as a multiple-line text variable
+
+Currently, those lines are:
+**Code:**
+**Status:**
+**Message:**
+
+#### Example:
+```4d
+$oResult:=$ss.load("Sheet1")
+If ($oResult#Null)
+     //success
+Else
+   $errorMessage:=$ss.parseError()
+   ALERT($errorMessage)
+End If
+```
+
+
 
 ### setValues (range:TEXT ;  values:Object {;valueInputOption:TEXT ; includeValuesInResponse: Boolean ; responseValueRenderOption:TEXT; responseDateTimeRenderOption:TEXT}) -> Object
 Implements [Spreadsheet.values.update](https://developers.google.com/sheets/api/reference/rest/v4/spreadsheets.values/update)
@@ -296,7 +317,6 @@ End If
 
 |Field|Description|
 |--|--|
-|_auth|(Reference to) the authorization object created by **cGoogleAuth**|
 |spreadsheetID|The part of the URL after /spreadsheets/d/|
 |endpoint|the base url for the API to use|
 |status|http status of the request|

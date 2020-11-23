@@ -8,34 +8,6 @@ Class constructor  // ({connectionMethod : text } )
 	// ===============================================================================================================
 	
 	
-Function parseError  //()
-	// parses an error object and returns the contents
-	var $oError : Object
-	$cr:=Char:C90(Carriage return:K15:38)
-	$oError:=This:C1470.sheetData.error
-	$0:=""
-	If ($oError#Null:C1517)
-		$0:="Code: "+String:C10($oError.code)+$cr+\
-			"Status: "+$oError.status+$cr+\
-			"Message: "+$oError.message
-	End if 
-	// _______________________________________________________________________________________________________________
-	
-/* as of r4 you can't use findIndex with a class function or a super function.  i leave this here for the day when that gets fixed.
-Function _findRowForValue  // $columnNumberOrProperty ; $value -> index of row
-// used to search column/property $columnNumberOrProperty for value $value in a collection or object
-	
-var $1 : Object
-var $2;$columnOrProperty : Variant
-var $3;$value : Text
-	
-$columnOrProperty:=$2
-$value:=$3
-$1.result:=$1.value[$columnOrProperty]=$value
-// _______________________________________________________________________________________________________________
-*/
-	
-	
 Function _http  // (http_method:TEXT ; url:TEXT; body:TEXT; header:object)
 	// returns an object with properties  status:TEXT ; value:TEXT
 	var $1;$2;$3 : Text
@@ -50,8 +22,20 @@ Function _http  // (http_method:TEXT ; url:TEXT; body:TEXT; header:object)
 			$aHeaderValues{1}:=$4.value
 			
 			$0:=New object:C1471()
-			$0.status:=HTTP Request:C1158($1;$2;$3;$oReturnValue;$aHeaderNames;$aHeaderValues)
-			$0.value:=$oReturnValue
+			$0.request:=$1+" "+$2+" "+$3  // for debugging
+			$retryInTicks:=0
+			
+			Repeat   //cope with rate limiting using exponential backoff
+				DELAY PROCESS:C323(Current process:C322;((2^$retryCounter)-1))  // rate limiter if we hit an error using exponential backoff. for retry 0 (first try), ((2^0)-1) = 0 = no wait.  exponential backoff is 2^c-1.  Since we're dealing with a rate limit, instead of using random we'll do it deterministically.
+				$0.status:=HTTP Request:C1158($1;$2;$3;$oReturnValue;$aHeaderNames;$aHeaderValues)
+				$0.value:=$oReturnValue
+				
+				If (OB Is defined:C1231($0.value;"error"))
+					If ($oReturnValue.error.code=429)  // hit rate limit
+						$retryCounter:=$retryCounter+1
+					End if   //($oReturnValue.error.code=429)
+				End if   //(OB Is defined($0.value;"error"))
+			Until (($0.status#429) | ($retryCounter>10))  // $retryCounter=10 delivers 17 seconds of waiting.  If we're still getting this error, abort.
 		: (This:C1470.connectionMethod="curl")  // not implemented yet
 			$header:=$4.name+": "+$4.value
 			$0:=Null:C1517

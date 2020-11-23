@@ -86,16 +86,13 @@ the request body is
 	
 	
 	$0:=New object:C1471()
+	$0.result:=$oResult
 	
 	If (This:C1470.status=200)
 		// still need to rename it, though xxx
 		$0.success:=True:C214
-		$0.message:=""
-		$0.result:=$oResult
-	Else   //$status=200
+	Else   //$status#200
 		$0.success:=False:C215
-		$0.message:=$oResult.status+" "+$oResult.value
-		$0.result:=$oResult
 	End if   //status=200
 	// _______________________________________________________________________________________________________________
 	
@@ -170,11 +167,12 @@ Function getValues  //(range:TEXT {; majorDimension:Text ; valueRenderOption:Tex
 	$url:=This:C1470.endpoint+This:C1470.spreadsheetId+"/values/"+$queryString
 	$oResult:=This:C1470._http(HTTP GET method:K71:1;$url;"";This:C1470._auth.getHeader())
 	//<debugx> need to come up with a more general way to do this b/c otherwise every call to _http will need to repeat this code.
-	If (OB Is defined:C1231($oResult.value;"error"))  // error occurred
+	If (OB Is defined:C1231($oResult.value;"error"))  // error occurred"// this chokes on "value.error" -> If (OB Is defined($oResult.value;"error"))  // error occurred
 		If (($oResult.value.error.code=401) & ($oResult.value.error.status="UNAUTHENTICATED"))  //token expired, try again with a forced refresh on the token
 			$oResult:=This:C1470._http(HTTP GET method:K71:1;$url;"";This:C1470._auth.getHeader(True:C214))
 		End if   //($oResult.value.error.code=401) & ($oResult.value.error.status="UNAUTHENTICATED")
 	End if   //(ob is defined($oResult.value.error))
+	This:C1470.request:=$oResult.request
 	This:C1470.status:=$oResult.status
 	This:C1470.sheetData:=$oResult.value
 	//</debugx>
@@ -223,6 +221,20 @@ Function load  // {(rangeString:text , includeGridData:boolean)}
 	End if   //$status#200
 	// _______________________________________________________________________________________________________________
 	
+	
+Function parseError  //()
+	// parses an error object and returns the contents
+	var $oError : Object
+	$cr:=Char:C90(Carriage return:K15:38)
+	$oError:=This:C1470.sheetData.error
+	$0:=""
+	If ($oError#Null:C1517)
+		$0:="Request: "+This:C1470.request+$cr+\
+			"Code: "+String:C10($oError.code)+$cr+\
+			"Status: "+$oError.status+$cr+\
+			"Message: "+$oError.message
+	End if 
+	// _______________________________________________________________________________________________________________
 	
 	
 Function setValues  //(range:TEXT ; valuesObject: Object ; valueInputOption:Text {; includeValuesInResponse: Boolean ; responseValueRenderOption: Text ; responseDateTimeRenderOption:Text})
@@ -292,8 +304,9 @@ Function _http  // (http_method:TEXT ; url:TEXT; body:TEXT; header:object)
 	//tries the cGoogleComms._http.  If it fails, it checks to see if that is because the token expired, and if so, tries again.
 	var $1;$2;$3 : Text
 	var $4;$oResult;$0 : Object
+	
 	$oResult:=Super:C1706._http($1;$2;$3;$4)
-	If (OB Is defined:C1231($oResult;"value.error"))  // error occurred"
+	If (OB Is defined:C1231($oResult.value;"error"))  // error occurred"// this chokes on the "values.error" If (OB Is defined($oResult;"value.error"))  // error occurred"
 		If (($oResult.value.error.code=401) & ($oResult.value.error.status="UNAUTHENTICATED"))  //token expired, try again with a forced refresh on the token
 			$oResult:=Super:C1706._http($1;$2;$3;This:C1470._auth.getHeader(True:C214))  // $4 should be this._auth.getHeader()
 		End if   //($oResult.value.error.code=401) & ($oResult.value.error.status="UNAUTHENTICATED")

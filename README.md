@@ -11,7 +11,7 @@ If you are trying to set up an app that will be for individual users and not an 
 
 ## Reference
 - [Using OAuth 2.0 to Access Google APIs](https://developers.google.com/identity/protocols/oauth2)
-
 - [Using OAuth 2.0 for Server to Server Applications](https://developers.google.com/identity/protocols/oauth2/service-account#httprest)
-
 - [Control G Suite API access with domain-wide delegation](https://support.google.com/a/answer/162106)
+- [API Quotas](https://developers.google.com/sheets/api/limits)
+
