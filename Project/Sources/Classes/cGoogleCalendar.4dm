@@ -19,13 +19,14 @@ Class constructor  // oGoogleAuth:object ; apiKey:text {; calendar_url:text}
 	If (Count parameters:C259>=3)  // url for calendar specified
 		This:C1470.setID($3)
 	Else 
-		This:C1470.id:=Null:C1517
+		This:C1470.metadata:=New object:C1471()
+		This:C1470.metadata.id:=Null:C1517
 	End if 
 	
 	
 	// ===============================================================================================================
 	
-	//                                         P U B L I C   F U N C T I O N S
+	//                                         C A L E N D A R   F U N C T I O N S
 	
 	// ===============================================================================================================
 	
@@ -57,8 +58,9 @@ the body is
 		$0:=False:C215
 		This:C1470.error:=$oResult.status
 	Else   //ok
-		This:C1470._properties:=OB Copy:C1225($oResult.value)
+		This:C1470.metadata:=OB Copy:C1225($oResult.value)
 		$0:=True:C214
+		This:C1470.events:=New collection:C1472()  // clear the events b/c new calendar is default
 	End if   //$status#200
 	// _______________________________________________________________________________________________________________
 	
@@ -71,7 +73,7 @@ does not implement any optional parameters
 	var $oResult : Object
 	var $1 : Text
 	
-	$url:=This:C1470.endpoint+"calendars/"+This:C1470._properties.id+"/events/"+$1
+	$url:=This:C1470.endpoint+"calendars/"+This:C1470.metadata.id+"/events/"+$1
 	This:C1470.error:=Null:C1517
 	$oResult:=This:C1470._http(HTTP DELETE method:K71:5;$url;"";This:C1470._auth.getHeader())
 	This:C1470.status:=$oResult.status
@@ -84,18 +86,18 @@ does not implement any optional parameters
 		$0:=True:C214
 		//<remove from collection>
 		$row:=-1
-		For each ($event;This:C1470._events) Until ($event.id=$1)
+		For each ($event;This:C1470.events) Until ($event.id=$1)
 			$row:=$row+1
 		End for each 
-		If ($row#This:C1470._events.length)  //found it
-			This:C1470._events.remove($row)
+		If ($row#This:C1470.events.length)  //found it
+			This:C1470.events.remove($row)
 		End if 
 		
 /*
 as of r4 you can't use findIndex with a class function or a super class function.  this code is here for the day when we can.
-$row:=This._events.findIndex("_findRowForValue";"id";$1)
+$row:=This.events.findIndex("_findRowForValue";"id";$1)
 If ($row>=0)
-This._events.remove($row)
+This.events.remove($row)
 End if 
 */
 		//</remove from collection>
@@ -128,7 +130,29 @@ does not implement any of the optional parameters
 	// _______________________________________________________________________________________________________________
 	
 	
-Function getEvents()->boolean
+	
+Function setID  // (id:text) -> boolean
+	// sets the id of the object to the calendar id specified in id and tries to load the calendar metadata
+	// returns whether the id is valid or not based on the load result
+	var $1 : Text
+	var $0 : Boolean
+	
+	This:C1470.metadata:=New object:C1471()
+	This:C1470.metadata.id:=$1
+	This:C1470.events:=New collection:C1472()  // when we change calendars clear the events
+	$0:=This:C1470._get()
+	// _______________________________________________________________________________________________________________
+	
+	
+	
+	// ===============================================================================================================
+	
+	//                                           E V E N T S   F U N C T I O N S
+	
+	// ===============================================================================================================
+	
+	
+Function eventsGet  //()->boolean
 	//GET https://www.googleapis.com/calendar/v3/calendars/<calendarId>/events
 /*
 Does not implement any optional parameters
@@ -137,9 +161,9 @@ Does not implement any optional parameters
 	var $0;$done : Boolean
 	var $url;$urlThisPass;$nextPageToken : Text
 	
-	$url:=This:C1470.endpoint+"calendars/"+This:C1470._properties.id+"/events"
+	$url:=This:C1470.endpoint+"calendars/"+This:C1470.metadata.id+"/events"
 	This:C1470.error:=Null:C1517
-	This:C1470._events:=New collection:C1472()
+	This:C1470.events:=New collection:C1472()
 	$urlThisPass:=$url  // first pass we don't have a page to retrieve
 	$done:=False:C215  // multiple passes to get all the events
 	$pass:=0  //debugx
@@ -152,10 +176,10 @@ Does not implement any optional parameters
 		If (This:C1470.status#200)  //fail
 			$0:=False:C215
 			This:C1470.error:=$oResult.value
-			This:C1470._events.clear()  // in case any have been assigned, already
+			This:C1470.events.clear()  // in case any have been assigned, already
 		Else   //ok
 			$0:=True:C214
-			This:C1470._events:=This:C1470._events.concat($oResult.value.items)
+			This:C1470.events:=This:C1470.events.concat($oResult.value.items)
 		End if   //$status#200
 		
 		$nextPageToken:=$oResult.value.nextPageToken
@@ -169,16 +193,31 @@ Does not implement any optional parameters
 	
 	
 	
-Function setID  // (id:text) -> boolean
-	// sets the id of the object to the calendar id specified in id and tries to load the calendar metadata
-	// returns whether the id is valid or not based on the load result
-	var $1 : Text
+Function eventInsert  //{ $eventObject : Object} -> boolean
+	// POST https://www.googleapis.com/calendar/v3/calendars/calendarId/events
+	
+	
+	var $oResult : Object
+	var $1 : Object
 	var $0 : Boolean
 	
-	This:C1470._properties:=New object:C1471()
-	This:C1470._properties.id:=$1
-	$0:=This:C1470._get()
+	
+	$url:=This:C1470.endpoint+"calendars/"+This:C1470.metadata.id+"/events"
+	This:C1470.error:=Null:C1517
+	$oResult:=This:C1470._http(HTTP POST method:K71:2;$url;JSON Stringify:C1217($1);This:C1470._auth.getHeader())
+	This:C1470.result:=$oResult
+	This:C1470.status:=$oResult.status
+	
+	
+	If (This:C1470.status#200)  //fail
+		$0:=False:C215
+		This:C1470.error:=$oResult.value.error
+	Else   //ok
+		This:C1470.events.push($oResult.value)
+		$0:=True:C214
+	End if   //$status#200
 	// _______________________________________________________________________________________________________________
+	
 	
 	
 	
@@ -191,12 +230,12 @@ Function setID  // (id:text) -> boolean
 	
 Function _get()->boolean
 	// GET https://www.googleapis.com/calendar/v3/calendars/<calendarId>
-	// loads the metadata for this._properties.id and returns whether the result is valid or not.
+	// loads the metadata for this.metadata.id and returns whether the result is valid or not.
 	var $oResult : Object
 	var $0 : Boolean
 	
 	
-	$url:=This:C1470.endpoint+"calendars/"+This:C1470._properties.id
+	$url:=This:C1470.endpoint+"calendars/"+This:C1470.metadata.id
 	This:C1470.error:=Null:C1517
 	$oResult:=This:C1470._http(HTTP GET method:K71:1;$url;"";This:C1470._auth.getHeader())
 	This:C1470.status:=$oResult.status
@@ -207,7 +246,7 @@ Function _get()->boolean
 		This:C1470.error:=$oResult.value
 	Else   //ok
 		$0:=True:C214
-		This:C1470._properties:=OB Copy:C1225($oResult.value)
+		This:C1470.metadata:=OB Copy:C1225($oResult.value)
 	End if   //$status#200
 	// _______________________________________________________________________________________________________________ 
 	

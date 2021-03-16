@@ -23,14 +23,14 @@ Function _http  // (http_method:TEXT ; url:TEXT; body:TEXT; header:object)
 			
 			$0:=New object:C1471()
 			$0.request:=$1+" "+$2+" "+$3  // for debugging
-			$retryInTicks:=0
+			$retryCounter:=0
 			
 			Repeat   //cope with rate limiting using exponential backoff
 				DELAY PROCESS:C323(Current process:C322;((2^$retryCounter)-1))  // rate limiter if we hit an error using exponential backoff. for retry 0 (first try), ((2^0)-1) = 0 = no wait.  exponential backoff is 2^c-1.  Since we're dealing with a rate limit, instead of using random we'll do it deterministically.
 				$0.status:=HTTP Request:C1158($1;$2;$3;$oReturnValue;$aHeaderNames;$aHeaderValues)
 				$0.value:=$oReturnValue
 				
-				If (OB Is defined:C1231($0.value;"error"))
+				If (OB Is defined:C1231($oReturnValue;"error"))
 					If ($oReturnValue.error.code=429)  // hit rate limit
 						$retryCounter:=$retryCounter+1
 					End if   //($oReturnValue.error.code=429)
