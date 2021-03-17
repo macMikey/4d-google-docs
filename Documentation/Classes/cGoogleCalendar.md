@@ -12,36 +12,36 @@ Extends *cGoogleComms*, **but** there should be at least one *cGoogleComms* obje
 
 ## Contents
 
-[Additional Prerequisites](#Additional Prerequisites)
+[Additional Prerequisites](#additional-prerequisites)
 
-[Constructor Parameters](#Constructor Parameters)
+[Constructor Parameters](#constructor-parameters)
 
-[Calendar Properties](#Calendar Properties)
+[Calendar Properties](#calendar-properties)
 
-* [this.metadata object](#this.metadata object)
+* [Calendar Metadata](#calendar-metadata)
 
-[Calendar API](#Calendar API)
+[Calendar API](#calendar-api)
 
-* [createCalendar](#createCalendar) - create a calendar
-* [getCalendarList](#getCalendarList) - get a list of calendars
-* [setID](#setID) - change a calendar's ID
+* [createCalendar](#createcalendar) - create a calendar
+* [getCalendarList](#getcalendarlist) - get a list of calendars
+* [setID](#setid) - change a calendar's ID
 
-[Event Properties](#Event Properties)
+[Event Properties](#event-properties)
 
-* [Event Properties Structure And Types](#Event Properties Structure And Types)
-* [Event Properties Descriptions](#Event Properties Descriptions)
+* [Event Properties Structure And Types](#event-properties-structure-and-types)
+* [Event Properties Descriptions](#event-properties-descriptions)
 
-[Events API](#Events API)
+[Events API](#events-api)
 
-* [eventDelete](#eventDelete) - delete an event on a calendar
-* [eventsGet](#eventsGet) - get the events from a particular calendar
-* [eventInsert](#eventInsert)
+* [eventDelete](#eventdelete) - delete an event on a calendar
+* [eventsGet](#eventsget) - get the events from a particular calendar
+* [eventInsert](#eventinsert) - add an event to the calendar
 
-[Internal Structure](# Internal Structure)
+[Internal Structure](#internal-structure)
 
-[Internal API](# Internal API)
+[Internal API](#internal-api)
 
-[References](#References)
+[References](#references)
 
 
 
@@ -79,12 +79,14 @@ Property|Datatype|Description
 --|--|--
 status|Integer|http status
 error|object|http error object (if status <>200)
-metadata |Object|[The metadata for the calendar](this.metadata object) 
-events|Collection|[Collection of Events](#Event Properties)
+metadata |Object|[The metadata for the calendar](calendar-metadata) 
+events|Collection|[Collection of Events](#event-properties)
 
 
 
-### this.metadata object
+### Calendar Metadata
+
+Calendar metadata is contained in the **metadata** object
 
 Contains the [Calendars Resource](https://developers.google.com/calendar/v3/reference/calendars#resource) metadata for the calendar
 
@@ -243,7 +245,7 @@ If successful, this method returns a response body object with the following str
 
 
 
-**Example:**
+#### Example:
 
 ```4d
 $calendarList:=$calendar.getCalendarList()
@@ -660,7 +662,7 @@ These are separated just for the purpose of keeping events functions together.
 
 ### eventInsert
 
-**Syntax:** `eventInsert(eventObject : Object) -> boolean`
+**Syntax:** `eventInsert(eventObject : Object) -> text`
 
 **Summary:** Implements [Events:Insert](https://developers.google.com/calendar/v3/reference/events/insert)
 
@@ -668,7 +670,7 @@ These are separated just for the purpose of keeping events functions together.
 
 * Updates **this.events**, appending the [Event Resource](https://developers.google.com/calendar/v3/reference/events#resource) to the end of the collection
 
-* Returns **true** if successful or **false** if unsuccessful
+* Returns **the event's id** if successful or **NULL** if unsuccessful
 
 **Notes: **
 
@@ -678,9 +680,35 @@ These are separated just for the purpose of keeping events functions together.
 
 * Note that **start** and **end** are *Required* properties, and all other properties are *Optional Properties*
 
-**Returns:** **True** if successful, **False** if unsuccessful
+**Returns:** **The ID of the event** if successful, **NULL** if unsuccessful
 
-**Example:**
+
+
+#### Example:
+
+```4d
+$tz:="America/New_York"
+$d:=Current date
+$ds:=String(Year of($d);"0000")+"-"+String(Month of($d);"00")+"-"+String(Day of($d);"00")  //YYYY-MM-DD
+
+var $event : Object
+$event:=New object()
+$event.start:=New object()
+$event.start.dateTime:=$ds+"T09:00:00"
+$event.start.timeZone:=$tz
+$event.end:=New object()
+$event.end.dateTime:=$ds+"T10:00:00"
+$event.end.timeZone:=$tz
+$event.summary:="Test Event"
+$event.description:=$event.summary+". Should run from "+$event.start.dateTime+" "+$event.start.timeZone+" to "+$event.end.dateTime+" "+$event.end.timeZone+"."
+
+$eventID:=$c.eventInsert($event)
+If ($eventID=Null)
+	ALERT("Insert failed "+String($c.error.code)+" - "+$c.error.message+". "+$c.error.status)
+	TRACE
+End if 
+
+```
 
 
 
@@ -710,7 +738,7 @@ Overrides to ***cGoogleComms._http***: if it gets a specific error that makes it
 
 
 ## References
-* Calendars
+### Calendars
 
   https://developers.google.com/calendar
 
@@ -720,7 +748,7 @@ Overrides to ***cGoogleComms._http***: if it gets a specific error that makes it
 
   [Calendars Resource Metadata](https://developers.google.com/calendar/v3/reference/calendars#resource)
 
-* Events
+### Events
 
   https://developers.google.com/calendar/v3/reference/events
 

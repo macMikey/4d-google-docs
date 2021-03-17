@@ -56,10 +56,10 @@ the body is
 	
 	If (This:C1470.status#200)  //fail
 		$0:=False:C215
-		This:C1470.error:=$oResult.status
+		This:C1470.error:=$oResult.$oResult.value.error
 	Else   //ok
-		This:C1470.metadata:=OB Copy:C1225($oResult.value)
 		$0:=True:C214
+		This:C1470.metadata:=OB Copy:C1225($oResult.value)
 		This:C1470.events:=New collection:C1472()  // clear the events b/c new calendar is default
 	End if   //$status#200
 	// _______________________________________________________________________________________________________________
@@ -81,7 +81,7 @@ does not implement any optional parameters
 	
 	If (This:C1470.status#204)  //fail
 		$0:=False:C215
-		This:C1470.error:=$oResult.value
+		This:C1470.error:=$oResult.value.error
 	Else   //ok
 		$0:=True:C214
 		//<remove from collection>
@@ -193,13 +193,13 @@ Does not implement any optional parameters
 	
 	
 	
-Function eventInsert  //{ $eventObject : Object} -> boolean
+Function eventInsert  //{ $eventObject : Object} -> text
 	// POST https://www.googleapis.com/calendar/v3/calendars/calendarId/events
 	
 	
 	var $oResult : Object
 	var $1 : Object
-	var $0 : Boolean
+	var $0 : Text
 	
 	
 	$url:=This:C1470.endpoint+"calendars/"+This:C1470.metadata.id+"/events"
@@ -210,11 +210,11 @@ Function eventInsert  //{ $eventObject : Object} -> boolean
 	
 	
 	If (This:C1470.status#200)  //fail
-		$0:=False:C215
+		$0:=Null:C1517
 		This:C1470.error:=$oResult.value.error
 	Else   //ok
 		This:C1470.events.push($oResult.value)
-		$0:=True:C214
+		$0:=$oResult.value.id
 	End if   //$status#200
 	// _______________________________________________________________________________________________________________
 	

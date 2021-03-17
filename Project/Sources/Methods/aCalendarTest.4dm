@@ -30,19 +30,15 @@ TRACE:C157
 $success:=$c.setID($id)  // assign the calendar to the id of the first calendar
 
 
-// grab all the events for the calendar
+// grab first n events for the calendar
 TRACE:C157
-$success:=$c.eventsGet()  // get the events for the default calendar
+$success:=$c.eventsGet()
 
 
-// create a new calendar called 'test'?
-$createCalendar:=CONFIRM:C162("Create a new calendar named 'test'?")
-If (ok=1)
-	TRACE:C157
-	$success:=$c.createCalendar("test")  // create a new calendar called "test"
-	ALERT:C41("test is the current calendar.")
-	// Now $c.metadata is assigned to the new calendar
-End if 
+// create a new calendar called 'test'
+TRACE:C157
+$success:=$c.createCalendar("test")  // create a new calendar called "test"
+// Now $c.metadata is assigned to the new calendar
 
 
 // create a new event
@@ -62,5 +58,9 @@ $event.end.timeZone:=$tz
 $event.summary:="Test Event"
 $event.description:=$event.summary+". Should run from "+$event.start.dateTime+" "+$event.start.timeZone+" to "+$event.end.dateTime+" "+$event.end.timeZone+"."
 
-$success:=$c.eventInsert($event)
-TRACE:C157
+$eventID:=$c.eventInsert($event)
+If ($eventID=Null:C1517)
+	ALERT:C41("Insert failed "+String:C10($c.error.code)+" - "+$c.error.message+". "+$c.error.status)
+	TRACE:C157
+End if 
+

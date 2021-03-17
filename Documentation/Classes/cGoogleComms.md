@@ -8,6 +8,10 @@ Handles all the comms with google.  This is intended to be a private library for
 
 
 
+## Notes
+
+
+
 ### Usage Quota And Rate Limiting
 
 There are usage limits for the frequency of calls to the apis.  [In spreadsheets, for example, you can by default make 100 API calls in 100 seconds per user, with a default max of 500 total calls in 100 seconds](https://developers.google.com/sheets/api/limits).  You can request a quota increase, but there is no guarantee you will receive it.  As a result, the API will attempt to cope by using [exponential-backoff](https://en.wikipedia.org/wiki/Exponential_backoff).  
